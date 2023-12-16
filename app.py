@@ -7,9 +7,9 @@ from PyPDF2 import PdfReader
 from typing_extensions import Concatenate
 from langchain.text_splitter import CharacterTextSplitter 
 
-ASTRA_DB_APPLICATION_TOKEN = "AstraCS:DnyWTkhEmHzZEIfLheqFmHUL:7b56116333ac94ad61ee3605d5d37da61c556c3aaa695883368cd3845dde33bb"
-ASTRA_DB_ID = "decf98de-5342-4d71-8a6c-46f46a8d8cef"
-OpenAI_API_KEY = "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"
+ASTRA_DB_APPLICATION_TOKEN = "Add your astra token here"
+ASTRA_DB_ID = "Add your astra db id here"
+OpenAI_API_KEY = "add your openAI api key here"
 
 def read_pdf(file_path):
     pdfreader = PdfReader(file_path)
