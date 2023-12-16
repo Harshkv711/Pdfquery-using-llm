@@ -1,32 +1,25 @@
-# Flask-Cassandra-OpenAI-PDF-Query
+PDF Text Extraction and Interactive Querying
 
-This repository contains a Flask web application that utilizes Cassandra for data storage, OpenAI for language models, and PyPDF2 for PDF text extraction to perform queries on extracted text.
+This Python script enables users to extract text from a PDF file of their choice, store the text data in AstraDB using Cassandra, and perform interactive querying to retrieve relevant information based on user-input questions.
 
+Features
 
-## Introduction
+- Extracts text content from a PDF file.
+- Stores the extracted text in AstraDB with Cassandra.
+- Utilizes OpenAI's language model for interactive querying based on user input.
+- Allows users to input questions and retrieves relevant answers from the stored text data.
 
-This Flask web application integrates Cassandra database functionality with OpenAI's language models to facilitate text-based queries on PDF documents. The application extracts text from a provided PDF file and allows users to input queries to retrieve relevant information from the document.
+Requirements
 
-## Features
+- Python 3.x
+- AstraDB (Cassandra)
 
-- PDF text extraction and processing.
-- Integration with Cassandra for efficient text storage and retrieval.
-- Utilization of OpenAI for language models and embeddings.
-- User-friendly web interface for querying text data.
+ Setup and Usage
 
-## Technologies Used
-
-- Flask
-- Cassandra
-- OpenAI
-- PyPDF2
-
-## Installation
-
-1. Clone this repository:
+1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your_username/Flask-Cassandra-OpenAI-PDF-Query.git
+   git clone https://github.com/your-username/pdf-text-extraction.git
    ```
 
 2. Install dependencies:
@@ -35,40 +28,39 @@ This Flask web application integrates Cassandra database functionality with Open
    pip install -r requirements.txt
    ```
 
-3. Set up Cassandra:
-   - Ensure Cassandra is installed and running.
-   - Update the Cassandra connection details in the code (`cluster` and `session` variables).
+3. Set up AstraDB and Obtain Keys:
 
-4. Obtain OpenAI API Key:
-   - Replace `'YOUR_OPENAI_API_KEY'` in the code with your actual OpenAI API key.
+   - Obtain your AstraDB Application Token and Database ID.
+   - Update the `ASTRA_DB_APPLICATION_TOKEN` and `ASTRA_DB_ID` variables in the script with your credentials.
 
-## Usage
+4. Set up OpenAI API:
 
-1. Run the Flask application:
+   - Obtain your OpenAI API Key.
+   - Update the `OpenAI_API_KEY` variable in the script with your API key.
+
+5. Run the script:
 
    ```bash
-   python app.py
+   python pdf_text_extraction.py
    ```
 
-2. Access the web application by visiting `http://localhost:5000` in your web browser.
-3. Upload a PDF file and input queries to retrieve information from the document.
+6. Follow the prompts:
 
-## Contributing
+   - Enter the path of the PDF file you want to process.
+   - Input your questions when prompted.
+   - Receive answers based on the stored text data and OpenAI's language model.
 
-Contributions are welcome! 
+Usage Example
 
-## License
+```bash
+Enter the path of the PDF file: /path/to/your/pdf/file.pdf
 
-This project is licensed under the [MIT License](LICENSE).
+Enter your question (or type 'quit' to exit): What is the capital of France?
+```
 
-## Acknowledgments
+Notes
 
-- [OpenAI](https://openai.com) for providing language models and embeddings.
-- [PyPDF2](https://pythonhosted.org/PyPDF2/) for PDF extraction functionality.
-
-## About
-
-This project was developed by Harsh as a demonstration of integrating Flask, Cassandra, OpenAI, and PDF text extraction for information retrieval purposes.
-
----
+- Ensure the PDF file path provided is valid.
+- Queries are case-insensitive but try to be as specific as possible for accurate results.
+- Type 'quit' at any time to exit the script.
 
