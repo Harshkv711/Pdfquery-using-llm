@@ -1,68 +1,75 @@
-from flask import Flask, render_template, request
-from langchain.vectorstores.cassandra import Cassandra
-from langchain.indexes.vectorstore import VectorStoreIndexWrapper
+from langchain.vectorstores.cassandra import Cassandra 
+from langchain.indexes.vectorstore import VectorStoreIndexWrapper 
 from langchain.llms import OpenAI
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.text_splitter import CharacterTextSplitter
-from PyPDF2 import PdfReader
-from cassandra.cluster import Cluster
+from langchain.embeddings import OpenAIEmbeddings 
+import cassio 
+from PyPDF2 import PdfReader 
+from typing_extensions import Concatenate
+from langchain.text_splitter import CharacterTextSplitter 
 
-app = Flask(__name__)
+ASTRA_DB_APPLICATION_TOKEN = "AstraCS:DnyWTkhEmHzZEIfLheqFmHUL:7b56116333ac94ad61ee3605d5d37da61c556c3aaa695883368cd3845dde33bb"
+ASTRA_DB_ID = "decf98de-5342-4d71-8a6c-46f46a8d8cef"
+OpenAI_API_KEY = "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"
 
-# Cassandra connection details
-cluster = Cluster(['10.16.89.5'])  # Replace with your Cassandra node IP
-session = cluster.connect('keyspace')  # Replace 'your_keyspace' with your actual keyspace name
-
-# Check if the connection is successful
-if session:
-    print("Connected to Cassandra cluster")
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/query', methods=['POST'])
-def query():
-    global session  # Define session as a global variable
-
-    pdfreader = PdfReader('kotler.pdf')
+def read_pdf(file_path):
+    pdfreader = PdfReader(file_path)
     raw_text = ''
     for i, page in enumerate(pdfreader.pages):
         content = page.extract_text()
         if content:
             raw_text += content
+    return raw_text
 
-    llm = OpenAI(openai_api_key="YOUR_OPENAI_API_KEY")  # Replace with your OpenAI API key
-    embedding = OpenAIEmbeddings(openai_api_key="YOUR_OPENAI_API_KEY")  # Replace with your OpenAI API key
+def initialize_astra_db():
+    cassio.init(token=ASTRA_DB_APPLICATION_TOKEN, database_id=ASTRA_DB_ID)
 
-    # Create a Cassandra vector store
-    astra_vector_store = Cassandra(
-        embedding=embedding,
-        table_name="qa_mini_demo",
-        session=session,  # Use the session created earlier
-        keyspace="keyspace",  # Replace 'your_keyspace' with your actual keyspace name
-    )
+def get_user_input():
+    file_path = input("Enter the path of the PDF file: ").strip()
+    return file_path
 
-    text_splitter = CharacterTextSplitter(
-        separator="\n",
-        chunk_size=800,
-        chunk_overlap=200,
-        length_function=len,
-    )
-
+def process_pdf_and_queries(raw_text, astra_vector_store, llm):
     texts = text_splitter.split_text(raw_text)
-
     astra_vector_store.add_texts(texts[:50])
-    print("Inserted %i headlines." % len(texts[:50]))
+    print("Inserted %i chunks of text." % len(texts[:50]))
     astra_vector_index = VectorStoreIndexWrapper(vectorstore=astra_vector_store)
 
-    query_text = request.form['query_text'].strip()
+    first_question = True
+    while True:
+        if first_question:
+            query_text = input("\nEnter your question (or type 'quit' to exit): ").strip()
+        else:
+            query_text = input("\nWhat's your next question (or type 'quit' to exit): ").strip()
 
-    print("\nQUESTION: \"%s\"" % query_text)
-    answer = astra_vector_index.query(query_text, llm=llm).strip()
-    print("ANSWER: \"%s\"\n" % answer)
+        if query_text.lower() == "quit":
+            break
 
-    return answer
+        if query_text == "":
+            continue
 
-if __name__ == '__main__':
-    app.run(debug=True)
+        first_question = False
+
+        print("\nQUESTION: \"%s\"" % query_text)
+        answer = astra_vector_index.query(query_text, llm=llm).strip()
+        print("ANSWER: \"%s\"\n" % answer)
+
+        print("FIRST DOCUMENTS BY RELEVANCE:")
+        for doc, score in astra_vector_store.similarity_search_with_score(query_text, k=4):
+            print("    [%0.4f] \"%s ...\"" % (score, doc.page_content[:84]))
+
+if __name__ == "__main__":
+    initialize_astra_db()
+    text_splitter = CharacterTextSplitter(separator="\n", chunk_size=800, chunk_overlap=200, length_function=len)
+    embedding = OpenAIEmbeddings(openai_api_key=OpenAI_API_KEY)
+    astra_vector_store = Cassandra(embedding=embedding, table_name="qa_mini_demo", session=None, keyspace=None)
+    llm = OpenAI(openai_api_key=OpenAI_API_KEY)
+
+    while True:
+        file_path = get_user_input()
+
+        try:
+            pdf_text = read_pdf(file_path)
+            process_pdf_and_queries(pdf_text, astra_vector_store, llm)
+        except FileNotFoundError:
+            print("File not found. Please enter a valid file path.")
+        except Exception as e:
+            print("An error occurred:", e)
